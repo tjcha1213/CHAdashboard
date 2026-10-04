@@ -44,6 +44,11 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .app-shell {
   min-height: 100vh;
   padding: 24px;
@@ -342,16 +347,24 @@ h4 {
   gap: 10px;
 }
 
-.action-list article {
+.action-list article,
+.action-list button {
   display: grid;
   grid-template-columns: 34px 1fr;
   gap: 10px;
   padding: 14px;
   border-radius: 8px;
   background: var(--soft-amber);
+  color: inherit;
+  text-align: left;
 }
 
-.action-list article:last-child {
+.action-list button {
+  width: 100%;
+}
+
+.action-list article:last-child,
+.action-list button:nth-child(even) {
   background: var(--soft-blue);
 }
 
@@ -359,14 +372,24 @@ h4 {
   color: var(--amber);
 }
 
-.action-list article:last-child svg {
+.action-list article:last-child svg,
+.action-list button:nth-child(even) svg {
   color: var(--blue);
+}
+
+.action-list .success {
+  background: var(--soft-green);
+}
+
+.action-list .success svg {
+  color: var(--green);
 }
 
 .action-list p,
 .program-panel p,
 .document-card p,
-.activity-panel p {
+.activity-panel p,
+.slot-detail p {
   color: var(--muted);
 }
 
@@ -374,16 +397,46 @@ h4 {
   display: grid;
 }
 
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.toolbar button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--white);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.toolbar .active {
+  border-color: rgba(22, 78, 99, 0.25);
+  color: var(--white);
+  background: var(--cyan);
+}
+
+.document-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.44fr);
+  gap: 14px;
+  align-items: start;
+}
+
 .document-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
 .document-card {
   min-width: 0;
   display: grid;
-  grid-template-columns: 42px 1fr;
   gap: 12px;
   padding: 14px;
   border: 1px solid var(--line);
@@ -391,7 +444,22 @@ h4 {
   background: #fbfdfd;
 }
 
-.document-card.needed {
+.document-card.selected {
+  outline: 2px solid rgba(22, 78, 99, 0.22);
+  outline-offset: 2px;
+}
+
+.document-open {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+}
+
+.document-card.needed,
+.document-card.changes {
   border-color: rgba(194, 65, 60, 0.28);
   background: #fff5f4;
 }
@@ -421,6 +489,17 @@ h4 {
   font-size: 1rem;
 }
 
+.file-chip {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: var(--cyan);
+  background: rgba(22, 78, 99, 0.08);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
 .document-card footer {
   grid-column: 1 / -1;
   display: flex;
@@ -439,8 +518,90 @@ h4 {
   color: var(--red);
 }
 
+.document-card.changes footer b {
+  color: var(--red);
+}
+
 .document-card footer small {
   color: var(--muted);
+}
+
+.slot-detail {
+  position: sticky;
+  top: 18px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdfd;
+}
+
+.slot-detail h3 {
+  font-size: 1.25rem;
+}
+
+.slot-detail dl {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+.slot-detail dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(23, 36, 42, 0.08);
+  padding-bottom: 8px;
+}
+
+.slot-detail dl div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.slot-detail dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.slot-detail dd {
+  min-width: 0;
+  text-align: right;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.slot-detail input {
+  display: none;
+}
+
+.detail-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.detail-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--cyan);
+  background: var(--soft-cyan);
+  font-weight: 850;
+}
+
+.detail-actions .danger {
+  color: var(--red);
+  background: #fff0ef;
 }
 
 .lower-grid {
@@ -496,7 +657,8 @@ h4 {
 @media (max-width: 920px) {
   .hero,
   .content-grid,
-  .lower-grid {
+  .lower-grid,
+  .document-layout {
     grid-template-columns: 1fr;
   }
 
@@ -507,6 +669,10 @@ h4 {
 
   .process-steps {
     grid-template-columns: 1fr;
+  }
+
+  .slot-detail {
+    position: static;
   }
 }
 
@@ -549,6 +715,10 @@ h4 {
 
   .program-panel article,
   .activity-panel article {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-actions {
     grid-template-columns: 1fr;
   }
 }
