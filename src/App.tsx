@@ -273,7 +273,6 @@ function App() {
   const optionalDocs = uploadSlots.filter((slot) => !slot.required)
   const allDocsReady = openTasks.length === 0
   const applicationProgress = Math.min(100, Math.round(40 + (readyDocs.length / requiredDocs.length) * 50))
-  const timelineProgress = allDocsReady ? 75 : 50
   const reviewEta = allDocsReady ? '2 days' : `${openTasks.length + 3} days`
   const notificationCount = openTasks.length
   const documentsToShow = [
@@ -410,8 +409,9 @@ function App() {
             <span>required documents ready</span>
             <div className="mini-progress" style={{ '--progress': `${applicationProgress}%` } as CSSProperties}>
               <i />
+              <span>{applicationProgress}% complete</span>
             </div>
-            <small>{applicationProgress}% complete · Review ETA {reviewEta}</small>
+            <small>Review ETA {reviewEta}</small>
           </aside>
         </section>
 
@@ -469,10 +469,10 @@ function App() {
                 <span className="eyebrow">Application process</span>
                 <h3>Progress</h3>
               </div>
-              <b>{applicationProgress}%</b>
             </div>
-            <div className="process-axis" style={{ '--progress': `${timelineProgress}%` } as CSSProperties}>
+            <div className="process-axis" style={{ '--progress': `${applicationProgress}%` } as CSSProperties}>
               <i />
+              <span>{applicationProgress}% complete</span>
             </div>
             <div className="process-steps">
               {stages.map((stage, index) => (
