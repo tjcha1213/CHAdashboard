@@ -181,12 +181,52 @@ h4 {
 }
 
 .hero-summary,
+.quick-card,
 .panel,
 .metrics article {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--white);
   box-shadow: var(--shadow);
+}
+
+.quick-card {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  padding: 24px;
+}
+
+.quick-card strong {
+  font-size: clamp(2.4rem, 7vw, 4.4rem);
+  line-height: 1;
+  color: var(--cyan);
+}
+
+.quick-card span {
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 850;
+}
+
+.quick-card small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.mini-progress {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.mini-progress i {
+  display: block;
+  width: var(--progress);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--cyan), var(--blue), #59d2c7);
 }
 
 .hero-summary {
@@ -395,6 +435,155 @@ h4 {
 
 .documents-panel {
   display: grid;
+}
+
+.task-panel {
+  display: grid;
+  gap: 2px;
+}
+
+.simple-doc-list {
+  display: grid;
+  gap: 10px;
+}
+
+.simple-doc {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdfd;
+}
+
+.simple-doc input {
+  display: none;
+}
+
+.simple-doc.needed,
+.simple-doc.changes {
+  border-color: rgba(194, 65, 60, 0.28);
+  background: #fff7f6;
+}
+
+.simple-doc.uploaded {
+  border-color: rgba(37, 99, 235, 0.24);
+  background: var(--soft-blue);
+}
+
+.simple-doc.approved {
+  border-color: rgba(20, 132, 95, 0.24);
+  background: var(--soft-green);
+}
+
+.doc-status-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  color: var(--cyan);
+  background: var(--white);
+}
+
+.simple-doc.needed .doc-status-icon,
+.simple-doc.changes .doc-status-icon {
+  color: var(--red);
+}
+
+.simple-doc.approved .doc-status-icon {
+  color: var(--green);
+}
+
+.doc-main {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.doc-main span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.doc-main p {
+  color: var(--muted);
+}
+
+.doc-main small {
+  color: var(--cyan);
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.doc-actions {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 230px;
+}
+
+.doc-actions strong {
+  width: 100%;
+  color: var(--cyan);
+  text-align: right;
+}
+
+.simple-doc.needed .doc-actions strong,
+.simple-doc.changes .doc-actions strong {
+  color: var(--red);
+}
+
+.doc-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--cyan);
+  background: var(--soft-cyan);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.doc-actions .quiet-danger {
+  width: 34px;
+  padding: 0;
+  color: var(--red);
+  background: #fff0ef;
+}
+
+.summary-list {
+  display: grid;
+  gap: 10px;
+}
+
+.summary-list article {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdfd;
+}
+
+.summary-list svg {
+  color: var(--cyan);
+}
+
+.summary-list p {
+  color: var(--muted);
 }
 
 .toolbar {
@@ -674,6 +863,20 @@ h4 {
   .slot-detail {
     position: static;
   }
+
+  .simple-doc {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .doc-actions {
+    grid-column: 2;
+    justify-content: start;
+    min-width: 0;
+  }
+
+  .doc-actions strong {
+    text-align: left;
+  }
 }
 
 @media (max-width: 620px) {
@@ -720,5 +923,21 @@ h4 {
 
   .detail-actions {
     grid-template-columns: 1fr;
+  }
+
+  .simple-doc {
+    grid-template-columns: 1fr;
+  }
+
+  .doc-actions {
+    grid-column: auto;
+  }
+
+  .doc-actions button {
+    flex: 1 1 110px;
+  }
+
+  .doc-actions .quiet-danger {
+    flex: 0 0 38px;
   }
 }

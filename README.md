@@ -4,11 +4,11 @@ Working prototype dashboard for a Cambridge Housing Authority applicant.
 
 ## Features
 
-- Applicant summary with live status, deadline, required document count, and review ETA.
-- Dynamic horizontal application process timeline based on document readiness.
+- Simple applicant summary with the number of documents left, completion progress, and review ETA.
+- Guided document checklist that puts required actions first.
 - Upload slots that accept files and record file name, file size, status, and last update.
-- Document filtering by needed, changes requested, uploaded, approved, and optional states.
-- Selected document detail panel with upload, approve, request changes, and remove actions.
+- Direct upload, replace, and remove actions on each document row.
+- Dynamic horizontal application process timeline based on document readiness.
 - Program track status for public housing and voucher applications that responds to document completion.
 - Recent activity feed that updates when dashboard actions are taken.
 
