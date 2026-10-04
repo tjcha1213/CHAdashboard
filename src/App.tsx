@@ -1,18 +1,24 @@
 import {
   AlertCircle,
+  Archive,
+  Bell,
   Building2,
   CheckCircle2,
   Clock3,
   FileCheck2,
-  FileText,
+  HelpCircle,
   Home,
+  KeyRound,
+  MessageCircle,
   Send,
   Trash2,
   UploadCloud,
   UserRound,
+  Users,
+  X,
 } from 'lucide-react'
 import { useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, FormEvent } from 'react'
 
 type StageState = 'complete' | 'current' | 'upcoming'
 type DocumentState = 'approved' | 'uploaded' | 'needed' | 'optional' | 'changes'
@@ -36,6 +42,66 @@ type ActivityItem = {
   date: string
   note: string
 }
+
+type ChatMessage = {
+  id: number
+  author: 'applicant' | 'worker'
+  name: string
+  text: string
+  time: string
+}
+
+type ProfileSection = 'password' | 'applications' | 'household' | 'notifications' | 'help'
+
+const profileSections: Array<{
+  id: ProfileSection
+  label: string
+  icon: typeof KeyRound
+  title: string
+  detail: string
+  items: string[]
+}> = [
+  {
+    id: 'password',
+    label: 'Password',
+    icon: KeyRound,
+    title: 'Password and security',
+    detail: 'Keep Maria’s account secure and review recent sign-in settings.',
+    items: ['Password last changed Sep 18', 'Two-step verification available', 'Recovery email: maria.santos@example.com'],
+  },
+  {
+    id: 'applications',
+    label: 'Past applications',
+    icon: Archive,
+    title: 'Past applications',
+    detail: 'Review previous submissions and closed application packets.',
+    items: ['2024 public housing update: archived', '2023 preference update: completed', 'Download application history'],
+  },
+  {
+    id: 'household',
+    label: 'Household',
+    icon: Users,
+    title: 'Household profile',
+    detail: 'Manage household members and contact information used for review.',
+    items: ['Primary applicant: Maria Santos', 'Household size: 3', 'Mailing address verification pending'],
+  },
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    icon: Bell,
+    title: 'Notification preferences',
+    detail: 'Choose how CHA sends reminders and application updates.',
+    items: ['Email reminders enabled', 'Text reminders not enabled', 'Deadline alerts sent 5 days before due date'],
+  },
+  {
+    id: 'help',
+    label: 'Help',
+    icon: HelpCircle,
+    title: 'Help and support',
+    detail: 'Find assistance for uploads, accessibility, and application questions.',
+    items: ['CHA intake line: 617-555-0142', 'Upload help available weekdays', 'Reasonable accommodation support available'],
+  },
+]
 
 const initialSlots: UploadSlot[] = [
   {
@@ -132,9 +198,73 @@ function fileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+function currentTime() {
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date())
+}
+
+const suggestedQuestions = [
+  'What income proof can I upload?',
+  'How do I prove Cambridge residency?',
+  'When is my deadline?',
+  'How long does review take?',
+  'Do I need optional documents?',
+]
+
+function getWorkerReply(question: string, openTasks: UploadSlot[]) {
+  const normalized = question.toLowerCase()
+
+  if (normalized.includes('income') || normalized.includes('pay') || normalized.includes('stub') || normalized.includes('benefit')) {
+    return 'For proof of income, please upload recent pay stubs, a benefits letter, a Social Security award letter, or an employer statement. A PDF or clear photo is fine.'
+  }
+
+  if (normalized.includes('residen') || normalized.includes('cambridge') || normalized.includes('preference') || normalized.includes('address')) {
+    return 'For Cambridge residency preference, upload a lease, utility bill, school record, employer record, or another document showing a Cambridge address or connection.'
+  }
+
+  if (normalized.includes('deadline') || normalized.includes('due') || normalized.includes('late')) {
+    return 'Your required documents are due by Oct 8. If you need more time, send us a note here and upload what you have as soon as possible.'
+  }
+
+  if (normalized.includes('review') || normalized.includes('long') || normalized.includes('time') || normalized.includes('eta')) {
+    return openTasks.length === 0
+      ? 'Your required documents are complete. Eligibility review usually begins within about 2 days.'
+      : `Review can begin after the required checklist is complete. Right now, I still see ${openTasks.length} required item${openTasks.length === 1 ? '' : 's'} left.`
+  }
+
+  if (normalized.includes('optional') || normalized.includes('lease') || normalized.includes('accommodation')) {
+    return 'Optional documents are not required to start review, but they can help if they apply to your situation, such as housing history or a reasonable accommodation request.'
+  }
+
+  if (normalized.includes('upload') || normalized.includes('file') || normalized.includes('document')) {
+    const nextNeeded = openTasks[0]?.title.toLowerCase()
+    return nextNeeded
+      ? `The next required upload is ${nextNeeded}. Use the Upload button on that checklist row, or the Upload next button at the top.`
+      : 'All required uploads are already submitted. You can replace a file from the checklist if something needs to change.'
+  }
+
+  return 'I can help with income proof, Cambridge residency, deadlines, review timing, uploads, and optional documents. Choose one of the quick questions below or type your question another way.'
+}
+
 function App() {
   const [uploadSlots, setUploadSlots] = useState(initialSlots)
   const [activity, setActivity] = useState(initialActivity)
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatInput, setChatInput] = useState('')
+  const [workerTyping, setWorkerTyping] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [activeProfileSection, setActiveProfileSection] = useState<ProfileSection>('password')
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      id: 1,
+      author: 'worker',
+      name: 'Alicia, CHA intake',
+      text: 'Hi Maria, I can help with your application documents. What would you like to ask?',
+      time: currentTime(),
+    },
+  ])
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   const requiredDocs = uploadSlots.filter((slot) => slot.required)
@@ -145,19 +275,23 @@ function App() {
   const applicationProgress = Math.min(100, Math.round(40 + (readyDocs.length / requiredDocs.length) * 50))
   const timelineProgress = allDocsReady ? 75 : 50
   const reviewEta = allDocsReady ? '2 days' : `${openTasks.length + 3} days`
+  const notificationCount = openTasks.length
   const documentsToShow = [
     ...openTasks,
     ...requiredDocs.filter((slot) => !openTasks.includes(slot)),
     ...optionalDocs,
   ]
+  const activeProfile = profileSections.find((section) => section.id === activeProfileSection) ?? profileSections[0]
+  const ActiveProfileIcon = activeProfile.icon
 
-  const stages: Array<{ title: string; detail: string; state: StageState }> = [
-    { title: 'Submitted', detail: 'Application received', state: 'complete' },
-    { title: 'Verified', detail: 'Identity confirmed', state: 'complete' },
+  const stages: Array<{ title: string; detail: string; state: StageState; completedDate?: string }> = [
+    { title: 'Submitted', detail: 'Application received', state: 'complete', completedDate: 'Sep 29' },
+    { title: 'Verified', detail: 'Identity confirmed', state: 'complete', completedDate: 'Oct 1' },
     {
       title: 'Documents',
       detail: allDocsReady ? 'All required docs ready' : `${openTasks.length} item${openTasks.length === 1 ? '' : 's'} left`,
       state: allDocsReady ? 'complete' : 'current',
+      completedDate: allDocsReady ? 'Today' : undefined,
     },
     {
       title: 'Review',
@@ -169,6 +303,45 @@ function App() {
 
   const addActivity = (note: string) => {
     setActivity((items) => [{ date: 'Today', note }, ...items].slice(0, 5))
+  }
+
+  const openChat = () => {
+    setChatOpen(true)
+    addActivity('Chat opened with CHA intake')
+  }
+
+  const sendChatMessage = (event?: FormEvent<HTMLFormElement>, presetQuestion?: string) => {
+    event?.preventDefault()
+    const text = (presetQuestion ?? chatInput).trim()
+    if (!text) return
+
+    setChatMessages((messages) => [
+      ...messages,
+      {
+        id: Date.now(),
+        author: 'applicant',
+        name: 'Maria',
+        text,
+        time: currentTime(),
+      },
+    ])
+    setChatInput('')
+    setWorkerTyping(true)
+
+    window.setTimeout(() => {
+      setChatMessages((messages) => [
+        ...messages,
+        {
+          id: Date.now() + 1,
+          author: 'worker',
+          name: 'Alicia, CHA intake',
+          text: getWorkerReply(text, openTasks),
+          time: currentTime(),
+        },
+      ])
+      setWorkerTyping(false)
+      addActivity('CHA intake replied in chat')
+    }, 700)
   }
 
   const updateSlot = (slotId: SlotId, updater: (slot: UploadSlot) => UploadSlot) => {
@@ -212,8 +385,9 @@ function App() {
             <span className="eyebrow">Cambridge Housing Authority</span>
             <h1>Applicant dashboard</h1>
           </div>
-          <button className="icon-button" type="button" aria-label="Open applicant profile">
+          <button className="icon-button profile-button" type="button" aria-label="Open applicant profile" onClick={() => setProfileOpen(true)}>
             <UserRound aria-hidden="true" size={20} />
+            {notificationCount > 0 ? <span aria-label={`${notificationCount} notifications`} /> : null}
           </button>
         </header>
 
@@ -226,7 +400,7 @@ function App() {
               <button type="button" onClick={() => inputRefs.current[openTasks[0]?.id ?? 'income']?.click()}>
                 <UploadCloud aria-hidden="true" size={18} /> Upload next
               </button>
-              <button className="secondary" type="button" onClick={() => addActivity('Message sent to CHA intake team')}>
+              <button className="secondary" type="button" onClick={openChat}>
                 <Send aria-hidden="true" size={18} /> Message CHA
               </button>
             </div>
@@ -262,7 +436,7 @@ function App() {
                   onChange={(event) => handleFileUpload(slot.id, event.target.files)}
                 />
                 <div className="doc-status-icon">
-                  {slot.state === 'approved' ? <CheckCircle2 size={20} /> : slot.fileName ? <FileText size={20} /> : <UploadCloud size={20} />}
+                  {slot.state === 'approved' || slot.state === 'uploaded' ? <CheckCircle2 size={20} /> : <UploadCloud size={20} />}
                 </div>
                 <div className="doc-main">
                   <div>
@@ -306,6 +480,7 @@ function App() {
                   <span>{stage.state === 'complete' ? <CheckCircle2 aria-hidden="true" size={16} /> : index + 1}</span>
                   <strong>{stage.title}</strong>
                   <small>{stage.detail}</small>
+                  <time>{stage.completedDate ? `Completed ${stage.completedDate}` : '\u00a0'}</time>
                 </article>
               ))}
             </div>
@@ -386,6 +561,107 @@ function App() {
           </section>
         </section>
       </section>
+
+      {chatOpen ? (
+        <section className="chat-shell" aria-label="CHA intake chat">
+          <div className="chat-panel">
+            <header className="chat-header">
+              <div>
+                <span className="eyebrow">Connected now</span>
+                <h3><MessageCircle aria-hidden="true" size={19} /> CHA intake chat</h3>
+                <p>Alicia from the intake team is available.</p>
+              </div>
+              <button type="button" aria-label="Close chat" onClick={() => setChatOpen(false)}>
+                <X aria-hidden="true" size={18} />
+              </button>
+            </header>
+
+            <div className="chat-messages" aria-live="polite">
+              {chatMessages.map((message) => (
+                <article key={message.id} className={`chat-message ${message.author}`}>
+                  <span>{message.name} · {message.time}</span>
+                  <p>{message.text}</p>
+                </article>
+              ))}
+              {workerTyping ? (
+                <article className="chat-message worker typing">
+                  <span>Alicia, CHA intake</span>
+                  <p>Typing...</p>
+                </article>
+              ) : null}
+            </div>
+
+            <div className="quick-questions" aria-label="Suggested questions">
+              {suggestedQuestions.map((question) => (
+                <button key={question} type="button" onClick={() => sendChatMessage(undefined, question)}>
+                  {question}
+                </button>
+              ))}
+            </div>
+
+            <form className="chat-compose" onSubmit={sendChatMessage}>
+              <input
+                aria-label="Message CHA intake"
+                value={chatInput}
+                onChange={(event) => setChatInput(event.target.value)}
+                placeholder="Ask about your documents"
+              />
+              <button type="submit" aria-label="Send message">
+                <Send aria-hidden="true" size={18} />
+              </button>
+            </form>
+          </div>
+        </section>
+      ) : null}
+
+      {profileOpen ? (
+        <section className="account-shell" aria-label="Applicant account navigation">
+          <aside className="account-panel">
+            <header className="account-header">
+              <div>
+                <span className="eyebrow">Applicant account</span>
+                <h3>Maria Santos</h3>
+                <p>Manage account and application settings.</p>
+              </div>
+              <button type="button" aria-label="Close profile menu" onClick={() => setProfileOpen(false)}>
+                <X aria-hidden="true" size={18} />
+              </button>
+            </header>
+
+            <nav className="account-nav" aria-label="Profile sections">
+              {profileSections.map((section) => {
+                const Icon = section.icon
+
+                return (
+                  <button
+                    key={section.id}
+                    className={activeProfileSection === section.id ? 'active' : ''}
+                    type="button"
+                    onClick={() => setActiveProfileSection(section.id)}
+                  >
+                    <Icon aria-hidden="true" size={18} />
+                    {section.label}
+                  </button>
+                )
+              })}
+            </nav>
+
+            <section className="account-detail" aria-live="polite">
+              <ActiveProfileIcon aria-hidden="true" size={24} />
+              <h3>{activeProfile.title}</h3>
+              <p>{activeProfile.detail}</p>
+              <div>
+                {activeProfile.items.map((item) => (
+                  <article key={item}>
+                    <CheckCircle2 aria-hidden="true" size={17} />
+                    <span>{item}</span>
+                  </article>
+                ))}
+              </div>
+            </section>
+          </aside>
+        </section>
+      ) : null}
     </main>
   )
 }
